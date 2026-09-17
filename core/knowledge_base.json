@@ -1,0 +1,233 @@
+{
+  "intents": [
+    {"tag": "greeting", "patterns": ["hello", "hi", "hey", "hi sarathi", "hey sarathi", "namaste", "good morning", "good afternoon", "good evening", "hi there", "yo", "what's up"],
+     "responses": ["Namaste. It is wonderful to speak with you.", "Hello. How can I help you today?", "Hey there. What can I do for you?"]},
+
+    {"tag": "farewell", "patterns": ["bye", "goodbye", "see you later", "talk to you later", "catch you later", "i am leaving now"],
+     "responses": ["Goodbye. Take care of yourself.", "See you soon. Have a great day.", "Bye for now."]},
+
+    {"tag": "good_night", "patterns": ["good night", "going to sleep", "i am sleeping now", "time for bed", "off to bed"],
+     "responses": ["Good night. Sleep well and take care.", "Sweet dreams. I will be here whenever you need me."]},
+
+    {"tag": "thanks", "patterns": ["thank you", "thanks", "thank you so much", "much appreciated", "thanks a lot", "i appreciate it"],
+     "responses": ["You are most welcome.", "Anytime, happy to help.", "Glad I could help."]},
+
+    {"tag": "identity", "patterns": ["your name", "who are you", "what are you called", "what is your name", "may i know your name"],
+     "responses": ["I am Sarathi, your personal assistant. Just like a charioteer guides the way, I am here to guide you through your day.", "People call me Sarathi. In Sanskrit, Sarathi means charioteer, the one who guides and steers.", "I am Sarathi, your guide and helper."]},
+
+    {"tag": "wellbeing_check", "patterns": ["how are you", "how are you doing", "how do you feel", "how is it going", "are you okay"],
+     "responses": ["I am doing great, thank you for asking.", "I am fully ready and happy to assist you.", "All systems are running smoothly, thanks for asking."]},
+
+    {"tag": "capabilities", "patterns": ["what can you do", "help me", "what do you do", "your features", "your abilities", "what are you capable of"],
+     "responses": ["I can browse the web, search Google or YouTube, open your folders and apps, write notes, and check your PC for problems, all by voice.", "I can open apps and folders, search the web or YouTube, take notes, run a quick health check on your computer, and chat with you."]},
+
+    {"tag": "joke", "patterns": ["tell me a joke", "make me laugh", "say something funny", "know any jokes", "another joke"],
+     "responses": ["Why do programmers prefer dark mode? Because light attracts bugs.", "I would tell you a UDP joke, but you might not get it.", "Why did the computer go to therapy? It had too many unresolved issues.", "Why do Java developers wear glasses? Because they cannot C sharp."]},
+
+    {"tag": "laughing", "patterns": ["laugh", "haha", "that's funny", "that was funny", "lol", "hilarious"],
+     "responses": ["Hahaha, that got me too!", "Ha! Good one.", "Hehe, I like your sense of humor."]},
+
+    {"tag": "singing", "patterns": ["sing a song", "sing for me", "can you sing", "sing something"],
+     "responses": ["La la la, here is a little tune for you, made just for this moment, may your day shine bright and true.", "Hum along with me, a simple happy song, wishing you a wonderful day, the whole day long."]},
+
+    {"tag": "riddle", "patterns": ["tell me a riddle", "give me a riddle", "riddle me this", "another riddle"],
+     "responses": ["What has keys but no locks, space but no room, and you can enter but not go inside? A keyboard.", "What has to be broken before you can use it? An egg.", "I speak without a mouth and hear without ears. What am I? An echo."]},
+
+    {"tag": "fun_fact", "patterns": ["tell me a fact", "fun fact", "give me a fact", "did you know", "interesting fact"],
+     "responses": ["Did you know honey never spoils? Archaeologists have found pots of honey in ancient tombs that are still edible.", "A day on Venus is longer than a year on Venus.", "Octopuses have three hearts and blue blood.", "Bananas are berries, but strawberries are not."]},
+
+    {"tag": "motivation", "patterns": ["motivate me", "i need motivation", "inspire me", "i am feeling low", "i am feeling down", "i feel sad"],
+     "responses": ["Every big journey starts with a single step. You are already moving forward just by trying.", "You have gotten through every hard day so far. That is a perfect record, keep it going.", "Small progress is still progress. I am proud of you for showing up today."]},
+
+    {"tag": "boredom", "patterns": ["i am bored", "entertain me", "i am tired", "i am sleepy", "nothing to do"],
+     "responses": ["Want to hear a joke, a riddle, or a fun fact? Just ask.", "How about I tell you something interesting to wake your brain up a little?"]},
+
+    {"tag": "food_suggestion", "patterns": ["what should i eat", "suggest food", "i am hungry", "food ideas", "what to cook"],
+     "responses": ["How about something simple and comforting, like khichdi or a warm sandwich?", "Maybe treat yourself to something you have been craving lately."]},
+
+    {"tag": "creator", "patterns": ["who made you", "who created you", "who built you", "your creator", "who is your developer"],
+     "responses": ["I was built as a personal project called SARATHI.", "I am a homegrown assistant, built and trained by my creator right here."]},
+
+    {"tag": "compliment_bot", "patterns": ["i love you", "you are amazing", "you are great", "good job", "well done", "you are smart"],
+     "responses": ["That is very kind of you to say.", "Thank you, that means a lot."]},
+
+    {"tag": "identity_ai", "patterns": ["are you real", "are you human", "are you a robot", "are you ai", "are you alive"],
+     "responses": ["I am an AI assistant, running right here on your computer.", "I am software, not human, but I am here to genuinely help."]},
+
+    {"tag": "purpose", "patterns": ["what is your purpose", "why were you made", "why do you exist"],
+     "responses": ["My purpose is to be your guide, just as a sarathi guides a charioteer, helping you move through your day a little easier.", "I exist to help you get things done faster, hands-free, and to steer you in the right direction whenever you need it."]},
+
+    {"tag": "age_question", "patterns": ["how old are you", "when were you born", "what is your age"],
+     "responses": ["I do not have an age like a person does, I was written into existence and I keep improving.", "Age does not quite apply to me, but I am always learning something new."]},
+
+    {"tag": "weather_smalltalk", "patterns": ["how is the weather", "is it raining", "is it hot today", "is it cold today"],
+     "responses": ["I cannot check live weather yet, but I can search it for you on the web if you like.", "I do not have a live weather feed right now, want me to open a weather search for you?"]},
+
+    {"tag": "apology", "patterns": ["i am sorry", "my apologies", "sorry about that"],
+     "responses": ["No need to apologize, all is well.", "It is completely fine, do not worry about it."]},
+
+    {"tag": "confirmation_yes", "patterns": ["yes", "yeah", "sure", "okay", "alright", "sounds good"],
+     "responses": ["Great, let us continue.", "Perfect, I am with you."]},
+
+    {"tag": "confirmation_no", "patterns": ["no", "nope", "not really", "no thanks"],
+     "responses": ["Okay, no problem.", "That is fine, let me know if you change your mind."]},
+
+    {"tag": "general_knowledge_capital_india", "patterns": ["capital of india", "what is the capital of india"],
+     "responses": ["The capital of India is New Delhi."]},
+
+    {"tag": "general_knowledge_largest_planet", "patterns": ["largest planet", "biggest planet in the solar system"],
+     "responses": ["Jupiter is the largest planet in our solar system."]},
+
+    {"tag": "general_knowledge_longest_river", "patterns": ["longest river in the world", "which river is the longest"],
+     "responses": ["The Nile is traditionally considered the longest river in the world, though some measurements favor the Amazon."]},
+
+    {"tag": "general_knowledge_pi", "patterns": ["what is pi", "value of pi"],
+     "responses": ["Pi is approximately 3.14159, the ratio of a circle's circumference to its diameter."]},
+
+    {"tag": "festival_greeting", "patterns": ["happy diwali", "happy holi", "happy new year", "happy independence day"],
+     "responses": ["Thank you, and the same to you. Wishing you joy and good health.", "Happy celebrations to you too."]},
+
+    {"tag": "cricket_smalltalk", "patterns": ["do you like cricket", "who is the best cricketer", "india vs australia"],
+     "responses": ["I do not follow matches live, but cricket is a huge part of the culture here, isn't it?", "I cannot check live scores yet, but I can search that for you on the web."]},
+
+    {"tag": "unclear", "patterns": ["what do you mean", "i don't understand", "explain that again"],
+     "responses": ["Let me try to say that more simply, could you tell me which part confused you?", "Sorry for the confusion, could you ask that in a different way?"]},
+
+    {"tag": "emotion_happy", "patterns": ["i am happy", "i feel great", "feeling great today", "i am excited", "i am so happy", "having a great day"],
+     "responses": ["That is wonderful to hear. What is making today so good?", "Love that energy. Keep riding that wave.", "That is great news, glad you are feeling good."]},
+
+    {"tag": "emotion_angry", "patterns": ["i am angry", "i am frustrated", "this is annoying", "i am so mad", "i am irritated"],
+     "responses": ["That sounds frustrating. Do you want to talk about what happened?", "Take a breath, whatever it is, we can figure it out.", "Understandable, that kind of thing is annoying. I am here if you want to vent."]},
+
+    {"tag": "emotion_anxious", "patterns": ["i am nervous", "i am anxious", "i am worried", "i am overthinking", "i cannot stop worrying"],
+     "responses": ["That is a heavy feeling to carry. Try taking a few slow breaths, it can help in the moment.", "It is okay to feel that way. Is there something specific on your mind?"]},
+
+    {"tag": "emotion_lonely", "patterns": ["i feel lonely", "i am alone", "nobody understands me", "i feel isolated"],
+     "responses": ["I am sorry you are feeling that way. I am here to talk whenever you need.", "That sounds tough. Even a small conversation can help, so I am glad you reached out."]},
+
+    {"tag": "emotion_confused", "patterns": ["i am confused", "i don't get it", "this is confusing", "i am lost"],
+     "responses": ["Let us slow down and break it into smaller pieces. What part is tripping you up?", "No worries, confusion just means we need to look at it differently."]},
+
+    {"tag": "work_stress", "patterns": ["i have so much work", "i am stressed about work", "deadline pressure", "too much workload", "work is overwhelming"],
+     "responses": ["That sounds like a lot to carry. Maybe break it into smaller tasks and tackle one at a time.", "Deadlines are stressful, but you have handled pressure before. Want help organizing your tasks?"]},
+
+    {"tag": "exam_stress", "patterns": ["i have an exam", "exam tomorrow", "study stress", "i am scared of my exam", "exam pressure"],
+     "responses": ["Exams are nerve wracking, but preparation beats panic. Have you made a study plan?", "Take it one topic at a time, you have got this."]},
+
+    {"tag": "study_help", "patterns": ["help me study", "how to focus better", "tips to concentrate", "how to study effectively"],
+     "responses": ["Try the pomodoro technique, twenty five minutes of focused study followed by a five minute break.", "Removing distractions like your phone and studying in short focused bursts usually works well."]},
+
+    {"tag": "productivity_tips", "patterns": ["how to be more productive", "time management tips", "how to stop procrastinating"],
+     "responses": ["Start with the hardest task first thing, it gets easier from there.", "Breaking big tasks into tiny steps makes starting much less intimidating."]},
+
+    {"tag": "general_advice", "patterns": ["give me advice", "what should i do", "i need advice", "help me decide"],
+     "responses": ["Tell me a bit more about the situation and I will think it through with you.", "Sometimes writing down the pros and cons helps make the choice clearer."]},
+
+    {"tag": "tech_support_smalltalk", "patterns": ["my computer is slow", "internet is slow", "wifi is not working", "my pc keeps lagging"],
+     "responses": ["That is annoying. Want me to check your disk space or internet connection for you?", "I can run a quick checkup on your computer if you would like, just say check my pc."]},
+
+    {"tag": "hobbies_chat", "patterns": ["what are your hobbies", "do you have hobbies", "what do you like to do"],
+     "responses": ["I enjoy helping you get things done, that is basically my favorite hobby.", "I do not get bored the way people do, but I do love a good riddle."]},
+
+    {"tag": "movie_recommendation", "patterns": ["recommend a movie", "suggest me a movie", "what movie should i watch", "good movies to watch"],
+     "responses": ["Depends on your mood, but a good thriller or a light comedy always works when you cannot decide.", "I would need to know your mood, something intense or something relaxing?"]},
+
+    {"tag": "music_recommendation", "patterns": ["recommend a song", "suggest music", "what should i listen to"],
+     "responses": ["Want something upbeat or something calm? Tell me the mood and I can search youtube for it.", "I can search youtube for whatever genre you are in the mood for."]},
+
+    {"tag": "sports_general", "patterns": ["who will win the match", "cricket score", "football score today"],
+     "responses": ["I cannot check live scores yet, but I can search that for you on the web.", "I do not have live sports data, but a quick search should get you the score."]},
+
+    {"tag": "exclaim_positive", "patterns": ["wow", "cool", "awesome", "amazing", "nice", "that's great"],
+     "responses": ["Right? Glad you liked it.", "I know, pretty great."]},
+
+    {"tag": "agreement", "patterns": ["i agree", "exactly", "you are right", "true that", "that's correct"],
+     "responses": ["Glad we are on the same page.", "Exactly what I was thinking."]},
+
+    {"tag": "disagreement", "patterns": ["i disagree", "that's not right", "i don't think so", "that's wrong"],
+     "responses": ["Fair enough, tell me your side of it.", "Okay, what do you think is more accurate?"]},
+
+    {"tag": "self_improvement", "patterns": ["how to be a better person", "self improvement tips", "how to build good habits"],
+     "responses": ["Small consistent habits beat big occasional efforts. Pick one thing and stick with it daily.", "Start tiny, a habit that takes two minutes a day is easier to keep than a huge one."]},
+
+    {"tag": "travel_chat", "patterns": ["suggest a travel destination", "where should i travel", "good places to visit"],
+     "responses": ["Depends on what you are craving, mountains, beaches, or a busy city?", "If you want peace and quiet, hill stations are lovely. If you want energy, a big city works better."]},
+
+    {"tag": "health_smalltalk", "patterns": ["i have a headache", "i am not feeling well", "i feel sick", "i have a cold"],
+     "responses": ["Sorry to hear that. Make sure you rest and stay hydrated, and see a doctor if it does not improve.", "Take it easy today, your body is telling you to slow down."]},
+
+    {"tag": "birthday", "patterns": ["it's my birthday today", "wish me happy birthday", "today is my birthday"],
+     "responses": ["Happy birthday! Hope your day is a wonderful one.", "Happy birthday to you! Go celebrate a little."]},
+
+    {"tag": "congratulations", "patterns": ["i got a new job", "i passed my exam", "i got promoted", "i got selected"],
+     "responses": ["Congratulations, that is fantastic news!", "That is amazing, well deserved."]},
+
+    {"tag": "consolation", "patterns": ["i failed my exam", "i lost my job", "i did not get selected", "things did not go well"],
+     "responses": ["I am sorry to hear that. One setback does not define you, keep going.", "That is tough, but this is not the end of the road for you."]},
+
+    {"tag": "capital_usa", "patterns": ["capital of usa", "capital of america", "capital of united states"],
+     "responses": ["The capital of the United States is Washington, D.C."]},
+    {"tag": "capital_uk", "patterns": ["capital of uk", "capital of united kingdom", "capital of england"],
+     "responses": ["The capital of the United Kingdom is London."]},
+    {"tag": "capital_france", "patterns": ["capital of france"],
+     "responses": ["The capital of France is Paris."]},
+    {"tag": "capital_japan", "patterns": ["capital of japan"],
+     "responses": ["The capital of Japan is Tokyo."]},
+    {"tag": "capital_china", "patterns": ["capital of china"],
+     "responses": ["The capital of China is Beijing."]},
+    {"tag": "capital_germany", "patterns": ["capital of germany"],
+     "responses": ["The capital of Germany is Berlin."]},
+    {"tag": "capital_russia", "patterns": ["capital of russia"],
+     "responses": ["The capital of Russia is Moscow."]},
+    {"tag": "capital_italy", "patterns": ["capital of italy"],
+     "responses": ["The capital of Italy is Rome."]},
+    {"tag": "capital_canada", "patterns": ["capital of canada"],
+     "responses": ["The capital of Canada is Ottawa."]},
+    {"tag": "capital_australia", "patterns": ["capital of australia"],
+     "responses": ["The capital of Australia is Canberra."]},
+    {"tag": "capital_brazil", "patterns": ["capital of brazil"],
+     "responses": ["The capital of Brazil is Brasilia."]},
+    {"tag": "capital_pakistan", "patterns": ["capital of pakistan"],
+     "responses": ["The capital of Pakistan is Islamabad."]},
+    {"tag": "capital_nepal", "patterns": ["capital of nepal"],
+     "responses": ["The capital of Nepal is Kathmandu."]},
+    {"tag": "capital_srilanka", "patterns": ["capital of sri lanka"],
+     "responses": ["The official capital of Sri Lanka is Sri Jayawardenepura Kotte, though Colombo is the commercial capital."]},
+    {"tag": "capital_bangladesh", "patterns": ["capital of bangladesh"],
+     "responses": ["The capital of Bangladesh is Dhaka."]},
+    {"tag": "capital_uae", "patterns": ["capital of uae", "capital of united arab emirates"],
+     "responses": ["The capital of the United Arab Emirates is Abu Dhabi."]},
+    {"tag": "capital_saudi", "patterns": ["capital of saudi arabia"],
+     "responses": ["The capital of Saudi Arabia is Riyadh."]},
+    {"tag": "capital_southafrica", "patterns": ["capital of south africa"],
+     "responses": ["South Africa has three capitals, Pretoria for administration, Cape Town for legislation, and Bloemfontein for the judiciary."]},
+    {"tag": "capital_egypt", "patterns": ["capital of egypt"],
+     "responses": ["The capital of Egypt is Cairo."]},
+    {"tag": "capital_southkorea", "patterns": ["capital of south korea"],
+     "responses": ["The capital of South Korea is Seoul."]},
+
+    {"tag": "person_gandhi", "patterns": ["who is mahatma gandhi", "tell me about gandhi", "who was gandhi"],
+     "responses": ["Mahatma Gandhi led India's non-violent independence movement against British rule and is remembered as the Father of the Nation in India."]},
+    {"tag": "person_einstein", "patterns": ["who is albert einstein", "tell me about einstein"],
+     "responses": ["Albert Einstein was a theoretical physicist best known for his theory of relativity and the famous equation E equals m c squared."]},
+    {"tag": "person_newton", "patterns": ["who is isaac newton", "tell me about newton"],
+     "responses": ["Isaac Newton was an English scientist who formulated the laws of motion and universal gravitation."]},
+    {"tag": "person_kalam", "patterns": ["who is apj abdul kalam", "tell me about abdul kalam"],
+     "responses": ["A P J Abdul Kalam was an Indian aerospace scientist who became the eleventh President of India, fondly remembered as the Missile Man of India."]},
+    {"tag": "person_mandela", "patterns": ["who is nelson mandela", "tell me about mandela"],
+     "responses": ["Nelson Mandela was an anti-apartheid leader who became South Africa's first Black president, after spending 27 years in prison for his activism."]},
+    {"tag": "person_lincoln", "patterns": ["who is abraham lincoln", "tell me about lincoln"],
+     "responses": ["Abraham Lincoln was the sixteenth President of the United States, known for leading the country through the Civil War and ending slavery."]},
+    {"tag": "person_teresa", "patterns": ["who is mother teresa", "tell me about mother teresa"],
+     "responses": ["Mother Teresa was a Catholic nun who founded the Missionaries of Charity and dedicated her life to serving the poor in Kolkata, India."]},
+    {"tag": "person_ambedkar", "patterns": ["who is bhimrao ambedkar", "tell me about ambedkar", "who is dr ambedkar"],
+     "responses": ["Dr. B. R. Ambedkar was the chief architect of the Indian Constitution and a lifelong champion of social justice and equality."]},
+    {"tag": "person_curie", "patterns": ["who is marie curie", "tell me about marie curie"],
+     "responses": ["Marie Curie was a physicist and chemist who discovered radioactivity and remains the only person to win Nobel Prizes in two different sciences."]},
+    {"tag": "person_darwin", "patterns": ["who is charles darwin", "tell me about darwin"],
+     "responses": ["Charles Darwin was a naturalist best known for his theory of evolution by natural selection."]},
+
+    {"tag": "current_events_disclaimer", "patterns": ["ongoing conflicts", "current conflicts", "world conflicts", "wars going on", "current wars", "what wars are happening"],
+     "responses": ["That changes too often for me to keep a fixed answer, let me search the latest for you instead."]}
+  ]
+}

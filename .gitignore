@@ -1,0 +1,22 @@
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code
+.vscode/
+
+# Environment/secrets
+.env
+
+# Voice model files
+voices/*.onnx
+
+# Generated audio files
+*.wav
+*.mp3
