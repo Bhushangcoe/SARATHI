@@ -1,86 +1,330 @@
 """
-SARATHI's voice, powered by Piper TTS - runs fully offline on your PC.
+SARATHI Voice Speaker
+---------------------
 
-IMPORTANT PERFORMANCE NOTE:
-This version loads the Piper voice model ONCE into memory using Piper's
-Python API, instead of launching a new "piper" process (and reloading
-the model from disk) on every single speak() call.
+Piper TTS voice output.
 
-Call preload_voices() once, early, in a background thread when the app
-starts (see ui/app.py) so the model is already warmed up by the time
-Sarathi needs to speak.
+Features:
+- English Piper voice
+- Voice caching
+- Markdown cleanup
+- Natural speech pacing
+- Spacebar interruption support
 """
 
+import re
+import threading
 import wave
 from pathlib import Path
 
 import pygame
 from piper import PiperVoice
 
-VOICES_DIR = Path(__file__).resolve().parent.parent / "voices"
 
-ENGLISH_MODEL = VOICES_DIR / "en_US-hfc_female-medium.onnx"
+# ============================================================
+# PATHS
+# ============================================================
 
-OUTPUT_FILE = Path("sarathi_voice.wav")
+VOICES_DIR = (
+    Path(__file__).resolve().parent.parent / "voices"
+)
+
+ENGLISH_MODEL = (
+    VOICES_DIR /
+    "en_US-hfc_female-medium.onnx"
+)
+
+OUTPUT_FILE = (
+    Path(__file__).resolve().parent /
+    "sarathi_voice.wav"
+)
+
+
+# ============================================================
+# SETTINGS
+# ============================================================
+
+# Slightly slower than default.
+SPEECH_LENGTH_SCALE = 1.18
 
 _voice_cache = {}
 
+_speech_lock = threading.Lock()
+
+
+# ============================================================
+# VOICE LOADING
+# ============================================================
 
 def _load_voice(model_path):
+
     key = str(model_path)
+
     if key not in _voice_cache:
-        _voice_cache[key] = PiperVoice.load(key)
+
+        print(
+            f"[SARATHI] Loading Piper voice..."
+        )
+
+        _voice_cache[key] = PiperVoice.load(
+            key
+        )
+
+        print(
+            "[SARATHI] Piper voice loaded."
+        )
+
     return _voice_cache[key]
 
 
 def preload_voices():
-    """
-    Call this once, early, in a background thread at app startup.
-    Warms up the English voice so the first speak() call is fast.
-    """
+
     try:
-        _load_voice(ENGLISH_MODEL)
-    except Exception as error:
-        print(f"[SARATHI] Could not preload voice model: {error}")
 
-
-def _generate_audio(text):
-    if not ENGLISH_MODEL.exists():
-        raise FileNotFoundError(
-            f"Voice model not found at {ENGLISH_MODEL}. "
-            "Make sure both the .onnx and .onnx.json files are in the voices/ folder."
+        _load_voice(
+            ENGLISH_MODEL
         )
 
-    voice = _load_voice(ENGLISH_MODEL)
+    except Exception as error:
 
-    with wave.open(str(OUTPUT_FILE), "wb") as wav_file:
-        voice.synthesize_wav(text, wav_file)
+        print(
+            "[SARATHI] Could not preload voice "
+            f"model: {error}"
+        )
 
+
+# ============================================================
+# TEXT CLEANING
+# ============================================================
+
+def clean_for_speech(text):
+
+    if not text:
+        return ""
+
+    text = str(text)
+
+    # Remove code blocks.
+    text = re.sub(
+        r"```[\s\S]*?```",
+        "",
+        text
+    )
+
+    # Remove Markdown headings.
+    text = re.sub(
+        r"^\s*#{1,6}\s*",
+        "",
+        text,
+        flags=re.MULTILINE
+    )
+
+    # Remove bold / italic formatting.
+    text = text.replace("**", "")
+    text = text.replace("__", "")
+    text = text.replace("*", "")
+    text = text.replace("_", " ")
+
+    # Remove Markdown links but preserve visible text.
+    text = re.sub(
+        r"\[([^\]]+)\]\([^)]+\)",
+        r"\1",
+        text
+    )
+
+    # Remove URLs.
+    text = re.sub(
+        r"https?://\S+",
+        "",
+        text
+    )
+
+    # Convert common bullets.
+    text = re.sub(
+        r"^\s*[-•]\s*",
+        "",
+        text,
+        flags=re.MULTILINE
+    )
+
+    # Remove table separators.
+    text = re.sub(
+        r"^\s*\|?[\s|:-]+\|?\s*$",
+        "",
+        text,
+        flags=re.MULTILINE
+    )
+
+    # Remove pipe table formatting.
+    text = text.replace("|", ", ")
+
+    # Remove weird repeated symbols.
+    text = re.sub(
+        r"[`~^]+",
+        "",
+        text
+    )
+
+    # Keep normal punctuation.
+    text = re.sub(
+        r"[ \t]+",
+        " ",
+        text
+    )
+
+    # Limit excessive blank lines.
+    text = re.sub(
+        r"\n{2,}",
+        ". ",
+        text
+    )
+
+    # Clean spaces before punctuation.
+    text = re.sub(
+        r"\s+([,.!?])",
+        r"\1",
+        text
+    )
+
+    return text.strip()
+
+
+# ============================================================
+# AUDIO GENERATION
+# ============================================================
+
+def _generate_audio(text):
+
+    if not ENGLISH_MODEL.exists():
+
+        raise FileNotFoundError(
+            f"Voice model not found at "
+            f"{ENGLISH_MODEL}. "
+            f"Make sure both the .onnx and "
+            f".onnx.json files exist."
+        )
+
+    voice = _load_voice(
+        ENGLISH_MODEL
+    )
+
+    with wave.open(
+        str(OUTPUT_FILE),
+        "wb"
+    ) as wav_file:
+
+        try:
+
+            voice.synthesize_wav(
+                text,
+                wav_file,
+                length_scale=SPEECH_LENGTH_SCALE
+            )
+
+        except TypeError:
+
+            voice.synthesize_wav(
+                text,
+                wav_file
+            )
+
+
+# ============================================================
+# AUDIO PLAYBACK
+# ============================================================
 
 def _play_audio():
-    pygame.mixer.init()
-    pygame.mixer.music.load(str(OUTPUT_FILE))
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
-    pygame.mixer.music.unload()
-    pygame.mixer.quit()
 
+    try:
+
+        if not pygame.mixer.get_init():
+
+            pygame.mixer.init(
+                frequency=22050,
+                size=-16,
+                channels=1,
+                buffer=512
+            )
+
+            print(
+                "[SARATHI] Audio system initialized."
+            )
+
+        pygame.mixer.music.load(
+            str(OUTPUT_FILE)
+        )
+
+        pygame.mixer.music.play()
+
+        clock = pygame.time.Clock()
+
+        while pygame.mixer.music.get_busy():
+
+            clock.tick(20)
+
+    finally:
+
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.music.unload()
+        except Exception:
+            pass
+
+
+# ============================================================
+# STOP SPEAKING
+# ============================================================
 
 def stop_speaking():
-    """Immediately stop whatever Sarathi is currently saying, if anything."""
+
     try:
-        pygame.mixer.music.stop()
+
+        if pygame.mixer.get_init():
+
+            pygame.mixer.music.stop()
+
     except Exception:
         pass
 
 
+# ============================================================
+# SPEAK
+# ============================================================
+
 def speak(text):
-    """Generate and play SARATHI's voice using local Piper TTS."""
-    try:
-        _generate_audio(text)
-        _play_audio()
-    except FileNotFoundError as error:
-        print(f"[SARATHI] Voice model missing: {error}")
-    except Exception as error:
-        print(f"[SARATHI] Could not generate speech: {error}")
+
+    cleaned_text = clean_for_speech(
+        text
+    )
+
+    if not cleaned_text:
+        return
+
+    # Prevent overlapping TTS calls.
+    with _speech_lock:
+
+        try:
+
+            print(
+                f"SARATHI [TTS]: {cleaned_text}"
+            )
+
+            _generate_audio(
+                cleaned_text
+            )
+
+            _play_audio()
+
+        except FileNotFoundError as error:
+
+            print(
+                f"[SARATHI] Voice model missing: "
+                f"{error}"
+            )
+
+        except Exception as error:
+
+            print(
+                f"[SARATHI] Could not generate "
+                f"speech: {error}"
+            )

@@ -1,937 +1,726 @@
-import tkinter as tk
-import threading
+
+"""SARATHI HUD with microphone, Groq, Piper and task confirmations."""
+
 import math
+import threading
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
 
 from voice.listener import listen
 from voice.speaker import speak, preload_voices, stop_speaking
 from core.assistant import get_response
 
+WIDTH = 760
+HEIGHT = 500
 
-# ============================================================
-# COLORS
-# ============================================================
-
-BG_COLOR = "#05070A"
-PANEL_COLOR = "#0A0F14"
-
+BG = "#070A0F"
+PANEL = "#0D121A"
+TEXT = "#E8F1FF"
+MUTED = "#718096"
 CYAN = "#00E5FF"
-BLUE = "#008CFF"
-WHITE = "#EAFBFF"
-GRAY = "#71808C"
+GREEN = "#35F28B"
+ORANGE = "#FFB84D"
+BORDER = "#1C2A36"
 
-GREEN = "#00FF9C"
-AMBER = "#FFB000"
-RED = "#FF3B30"
-
-
-# ============================================================
-# SARATHI APPLICATION
-# ============================================================
 
 class SarathiApp:
-
     def __init__(self, root):
-
         self.root = root
+        self.root.title("SARATHI")
+        self.root.geometry(f"{WIDTH}x{HEIGHT}")
+        self.root.resizable(False, False)
+        self.root.configure(bg=BG)
+        self.root.protocol("WM_DELETE_WINDOW", self.shutdown)
 
-        # ----------------------------------------------------
-        # PRELOAD VOICE MODEL IN BACKGROUND (speed fix)
-        #
-        # Starts loading the Piper voice model immediately,
-        # in parallel with the UI building below, so it's
-        # already warmed up by the time the intro needs to speak.
-        # ----------------------------------------------------
+        self.is_listening = False
+        self.is_speaking = False
+        self.is_processing = False
+        self.is_shutting_down = False
+
+        self.animation_angle = 0
+        self.pulse = 0
+        self.activity_lines = []
+
+        self._build_ui()
+        self.root.bind("<space>", self.interrupt)
 
         threading.Thread(
             target=preload_voices,
-            daemon=True
+            daemon=True,
         ).start()
 
-        # ----------------------------------------------------
-        # WINDOW
-        # ----------------------------------------------------
+        self.root.after(700, self.start_intro)
+        self.root.after(50, self.animate)
+        self.update_clock()
 
-        self.root.title("SARATHI AI")
+    # --------------------------------------------------------
+    # BUILD USER INTERFACE
+    # --------------------------------------------------------
+    def _build_ui(self):
+        header = tk.Frame(self.root, bg=BG)
+        header.pack(fill="x", padx=18, pady=(12, 5))
 
-        self.root.geometry(
-            "900x650"
-        )
+        tk.Label(
+            header,
+            text="S A R A T H I",
+            font=("Segoe UI", 17, "bold"),
+            bg=BG,
+            fg=TEXT,
+        ).pack(side="left")
 
-        self.root.configure(
-            bg=BG_COLOR
-        )
-
-        self.root.minsize(
-            800,
-            600
-        )
-
-        self.root.protocol(
-            "WM_DELETE_WINDOW",
-            self.close_app
-        )
-
-        # ----------------------------------------------------
-        # KEY-PRESS INTERRUPT
-        #
-        # Press Spacebar to immediately stop Sarathi mid-sentence.
-        # Using a key instead of the mic to interrupt avoids the
-        # mic picking up her own voice through your speakers.
-        # ----------------------------------------------------
-
-        self.root.bind(
-            "<space>",
-            self.interrupt_speaking
-        )
-
-        self.root.focus_set()
-
-        # ----------------------------------------------------
-        # STATE
-        # ----------------------------------------------------
-
-        self.is_running = True
-        self.is_listening = False
-        self.is_speaking = False
-
-        self.animation_angle = 0
-        self.pulse_value = 0
-
-        # ----------------------------------------------------
-        # MAIN FRAME
-        # ----------------------------------------------------
-
-        self.main_frame = tk.Frame(
-            self.root,
-            bg=BG_COLOR
-        )
-
-        self.main_frame.pack(
-            fill="both",
-            expand=True
-        )
-
-        # ----------------------------------------------------
-        # TITLE
-        # ----------------------------------------------------
-
-        self.title_label = tk.Label(
-            self.main_frame,
-            text="SARATHI",
-            font=("Segoe UI", 30, "bold"),
+        tk.Label(
+            header,
+            text="  V4  •  AI TASK CORE",
+            font=("Consolas", 8, "bold"),
+            bg=BG,
             fg=CYAN,
-            bg=BG_COLOR
+        ).pack(side="left", padx=8)
+
+        self.clock_label = tk.Label(
+            header,
+            text="",
+            font=("Consolas", 9),
+            bg=BG,
+            fg=MUTED,
+        )
+        self.clock_label.pack(side="right")
+
+        main = tk.Frame(self.root, bg=BG)
+        main.pack(
+            fill="both",
+            expand=True,
+            padx=15,
+            pady=5,
         )
 
-        self.title_label.pack(
-            pady=(25, 2)
+        # Left system panel
+        left = tk.Frame(
+            main,
+            bg=PANEL,
+            highlightbackground=BORDER,
+            highlightthickness=1,
+            width=145,
         )
+        left.pack(side="left", fill="y", padx=(0, 8))
+        left.pack_propagate(False)
 
-        # ----------------------------------------------------
-        # SUBTITLE
-        # ----------------------------------------------------
+        tk.Label(
+            left,
+            text="SYSTEM",
+            font=("Consolas", 8, "bold"),
+            bg=PANEL,
+            fg=MUTED,
+        ).pack(anchor="w", padx=12, pady=(13, 10))
 
-        self.subtitle_label = tk.Label(
-            self.main_frame,
-            text="PERSONAL AI ASSISTANT",
-            font=("Segoe UI", 10),
-            fg=GRAY,
-            bg=BG_COLOR
+        self.system_items = {}
+
+        self._system_item(left, "CORE", "ONLINE")
+        self._system_item(left, "GROQ", "ONLINE")
+        self._system_item(left, "PIPER", "READY")
+        self._system_item(left, "MIC", "READY")
+        self._system_item(left, "MEMORY", "ACTIVE")
+        self._system_item(left, "AGENT", "READY")
+
+        # Center animation panel
+        center = tk.Frame(
+            main,
+            bg=PANEL,
+            highlightbackground=BORDER,
+            highlightthickness=1,
         )
-
-        self.subtitle_label.pack(
-            pady=(0, 10)
+        center.pack(
+            side="left",
+            fill="both",
+            expand=True,
+            padx=(0, 8),
         )
-
-        # ----------------------------------------------------
-        # STATUS
-        # ----------------------------------------------------
-
-        self.status_label = tk.Label(
-            self.main_frame,
-            text="INITIALIZING",
-            font=("Segoe UI", 11, "bold"),
-            fg=AMBER,
-            bg=BG_COLOR
-        )
-
-        self.status_label.pack(
-            pady=(5, 10)
-        )
-
-        # ----------------------------------------------------
-        # HUD CANVAS
-        # ----------------------------------------------------
 
         self.canvas = tk.Canvas(
-            self.main_frame,
-            width=600,
-            height=360,
-            bg=BG_COLOR,
-            highlightthickness=0
+            center,
+            width=330,
+            height=290,
+            bg=PANEL,
+            highlightthickness=0,
+        )
+        self.canvas.pack(pady=(8, 0))
+
+        self.status_label = tk.Label(
+            center,
+            text="READY",
+            font=("Consolas", 15, "bold"),
+            bg=PANEL,
+            fg=GREEN,
+        )
+        self.status_label.pack(pady=(0, 3))
+
+        self.substatus_label = tk.Label(
+            center,
+            text="Press Space to interrupt",
+            font=("Segoe UI", 8),
+            bg=PANEL,
+            fg=MUTED,
+        )
+        self.substatus_label.pack()
+
+        # Right activity panel
+        right = tk.Frame(
+            main,
+            bg=PANEL,
+            highlightbackground=BORDER,
+            highlightthickness=1,
+            width=205,
+        )
+        right.pack(side="right", fill="y")
+        right.pack_propagate(False)
+
+        tk.Label(
+            right,
+            text="ACTIVITY",
+            font=("Consolas", 8, "bold"),
+            bg=PANEL,
+            fg=MUTED,
+        ).pack(anchor="w", padx=12, pady=(13, 8))
+
+        self.activity_text = tk.Text(
+            right,
+            bg=PANEL,
+            fg=TEXT,
+            insertbackground=TEXT,
+            relief="flat",
+            borderwidth=0,
+            font=("Consolas", 8),
+            wrap="word",
+            state="disabled",
+        )
+        self.activity_text.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=(0, 10),
         )
 
-        self.canvas.pack(
-            pady=5
-        )
-
-        # ----------------------------------------------------
-        # INFO PANEL
-        # ----------------------------------------------------
-
-        self.info_frame = tk.Frame(
-            self.main_frame,
-            bg=PANEL_COLOR,
-            highlightbackground="#13202A",
-            highlightthickness=1
-        )
-
-        self.info_frame.pack(
-            fill="x",
-            padx=60,
-            pady=(10, 20)
-        )
-
-        self.info_label = tk.Label(
-            self.info_frame,
-            text="English voice mode",
-            font=("Segoe UI", 10),
-            fg=GRAY,
-            bg=PANEL_COLOR
-        )
-
-        self.info_label.pack(
-            pady=10
-        )
-
-        # ----------------------------------------------------
-        # FOOTER
-        # ----------------------------------------------------
+        # Footer
+        footer = tk.Frame(self.root, bg=BG)
+        footer.pack(fill="x", padx=18, pady=(2, 12))
 
         self.footer_label = tk.Label(
-            self.main_frame,
-            text='Speak naturally • English only • Say "Bye Sarathi" to exit',
-            font=("Segoe UI", 9),
-            fg=GRAY,
-            bg=BG_COLOR
+            footer,
+            text="SARATHI • ONLINE",
+            font=("Consolas", 8, "bold"),
+            bg=BG,
+            fg=CYAN,
         )
+        self.footer_label.pack(side="left")
 
-        self.footer_label.pack(
-            pady=(0, 10)
+        tk.Label(
+            footer,
+            text="SPACE  •  STOP VOICE",
+            font=("Consolas", 8),
+            bg=BG,
+            fg=MUTED,
+        ).pack(side="right")
+
+    def _system_item(self, parent, name, value):
+        frame = tk.Frame(parent, bg=PANEL)
+        frame.pack(fill="x", padx=12, pady=5)
+
+        tk.Label(
+            frame,
+            text="●",
+            font=("Segoe UI", 7),
+            bg=PANEL,
+            fg=GREEN,
+        ).pack(side="left")
+
+        tk.Label(
+            frame,
+            text=name,
+            font=("Consolas", 8),
+            bg=PANEL,
+            fg=TEXT,
+        ).pack(side="left", padx=5)
+
+        value_label = tk.Label(
+            frame,
+            text=value,
+            font=("Consolas", 7),
+            bg=PANEL,
+            fg=MUTED,
         )
+        value_label.pack(side="right")
 
-        # ----------------------------------------------------
-        # START HUD ANIMATION
-        # ----------------------------------------------------
+        self.system_items[name] = value_label
 
-        self.animate_hud()
-
-        # ----------------------------------------------------
-        # START SARATHI AFTER UI LOADS
-        # ----------------------------------------------------
-
-        self.root.after(
-            800,
-            self.start_sarathi
-        )
-
-    # ========================================================
-    # KEY-PRESS INTERRUPT
-    # ========================================================
-
-    def interrupt_speaking(self, event=None):
-        """
-        Called when Spacebar is pressed. Immediately stops whatever
-        Sarathi is currently saying. The background speak thread's
-        own finally block takes care of resetting state and moving
-        back to listening, once stop_speaking() cuts the audio.
-        """
-
-        if not self.is_running:
-            return
-
-        if self.is_speaking:
-
-            stop_speaking()
-
-            self.set_status(
-                "interrupted",
-                RED
-            )
-
-    # ========================================================
-    # STATUS
-    # ========================================================
-
-    def set_status(
-        self,
-        text,
-        color=CYAN
-    ):
-
-        if not self.is_running:
-            return
-
-        self.root.after(
-            0,
-            lambda: self._update_status(
-                text,
-                color
-            )
-        )
-
-    def _update_status(
-        self,
-        text,
-        color
-    ):
-
-        if not self.is_running:
-            return
+    # --------------------------------------------------------
+    # STATUS AND ACTIVITY
+    # --------------------------------------------------------
+    def set_status(self, status, color=None, substatus=None):
+        color = color or TEXT
 
         self.status_label.config(
-            text=text.upper(),
-            fg=color
+            text=status,
+            fg=color,
         )
 
-    # ========================================================
-    # START SARATHI
-    # ========================================================
+        if substatus:
+            self.substatus_label.config(text=substatus)
 
-    def start_sarathi(self):
+        self.footer_label.config(text=f"SARATHI • {status}")
 
-        if not self.is_running:
+    def log_activity(self, text):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+
+        self.activity_lines.append(
+            f"[{timestamp}] {text}"
+        )
+
+        if len(self.activity_lines) > 16:
+            self.activity_lines.pop(0)
+
+        self.activity_text.config(state="normal")
+        self.activity_text.delete("1.0", "end")
+        self.activity_text.insert(
+            "end",
+            "\n".join(self.activity_lines),
+        )
+        self.activity_text.see("end")
+        self.activity_text.config(state="disabled")
+
+    # --------------------------------------------------------
+    # INTRODUCTION
+    # --------------------------------------------------------
+    def start_intro(self):
+        if self.is_shutting_down:
             return
 
         self.set_status(
-            "starting",
-            AMBER
+            "STARTING",
+            CYAN,
+            "Initializing voice system...",
         )
+
+        self.log_activity("SARATHI initialized.")
 
         threading.Thread(
-            target=self.intro_in_background,
-            daemon=True
+            target=self.intro_thread,
+            daemon=True,
         ).start()
 
-    # ========================================================
-    # INTRO
-    # ========================================================
-
-    def intro_in_background(self):
-
-        intro = (
-            "Hello Bhushan. "
-            "I am Sarathi, your personal AI assistant. "
-            "How can I help you?"
-        )
-
-        print(
-            f"SARATHI: {intro}"
-        )
-
-        self.is_speaking = True
-
+    def intro_thread(self):
         try:
-
             speak(
-                intro
+                "Hello Bhushan. I am Sarathi, your personal AI assistant. "
+                "How can I help you?"
             )
-
         except Exception as error:
+            print(f"[SARATHI] Intro error: {error}")
 
-            print(
-                "\nSARATHI intro voice error:"
-            )
+        if not self.is_shutting_down:
+            try:
+                self.root.after(500, self.begin_listening)
+            except tk.TclError:
+                pass
 
-            print(error)
-
-        finally:
-
-            self.is_speaking = False
-
-            if self.is_running:
-
-                self.root.after(
-                    0,
-                    self.start_listening
-                )
-
-    # ========================================================
-    # START LISTENING
-    # ========================================================
-
-    def start_listening(self):
-
-        if not self.is_running:
-            return
-
-        if self.is_listening:
+    # --------------------------------------------------------
+    # MICROPHONE LISTENING
+    # --------------------------------------------------------
+    def begin_listening(self):
+        if (
+            self.is_shutting_down
+            or self.is_speaking
+            or self.is_processing
+            or self.is_listening
+        ):
             return
 
         self.is_listening = True
 
-        if self.is_speaking:
+        self.set_status(
+            "LISTENING",
+            CYAN,
+            "Speak now...",
+        )
 
-            self.set_status(
-                "listening (say anything to interrupt)",
-                GREEN
-            )
+        self.system_items["MIC"].config(
+            text="LISTEN",
+            fg=CYAN,
+        )
 
-        else:
-
-            self.set_status(
-                "listening",
-                CYAN
-            )
+        self.log_activity("Microphone active.")
 
         threading.Thread(
-            target=self.listen_in_background,
-            daemon=True
+            target=self.listen_thread,
+            daemon=True,
         ).start()
 
-    # ========================================================
-    # LISTEN IN BACKGROUND
-    # ========================================================
+    def listen_thread(self):
+        try:
+            result = listen()
 
-    def listen_in_background(self):
+            if isinstance(result, dict):
+                text = result.get("text", "")
+            else:
+                text = str(result or "")
+
+        except Exception as error:
+            print(f"[SARATHI] Listener error: {error}")
+            text = ""
 
         try:
-
-            user_data = listen()
-
-            if not self.is_running:
-                return
-
             self.root.after(
                 0,
-                self.handle_voice_result,
-                user_data
+                lambda captured=text: self.process_input(captured),
             )
+        except tk.TclError:
+            pass
 
-        except Exception as error:
-
-            print(
-                "\nSARATHI listener error:"
-            )
-
-            print(error)
-
-            self.is_listening = False
-
-            if self.is_running:
-
-                self.set_status(
-                    "listener error",
-                    RED
-                )
-
-                self.root.after(
-                    1500,
-                    self.start_listening
-                )
-
-    # ========================================================
-    # HANDLE VOICE RESULT
-    # ========================================================
-
-    def handle_voice_result(
-        self,
-        user_data
-    ):
-
+    # --------------------------------------------------------
+    # PROCESS USER INPUT
+    # --------------------------------------------------------
+    def process_input(self, text):
         self.is_listening = False
 
-        if not self.is_running:
+        if self.is_shutting_down:
             return
 
-        # ----------------------------------------------------
-        # GET TEXT
-        # ----------------------------------------------------
-
-        if isinstance(
-            user_data,
-            dict
-        ):
-
-            user_message = user_data.get(
-                "text",
-                ""
-            )
-
-        else:
-
-            user_message = str(
-                user_data or ""
-            )
-
-        user_message = user_message.strip()
-
-        # ----------------------------------------------------
-        # NOTHING HEARD
-        # ----------------------------------------------------
-
-        if not user_message:
-
-            self.set_status(
-                "no input",
-                AMBER
-            )
-
-            self.root.after(
-                700,
-                self.start_listening
-            )
-
-            return
-
-        # ----------------------------------------------------
-        # PRINT USER MESSAGE
-        # ----------------------------------------------------
-
-        print(
-            f"User: {user_message}"
+        self.system_items["MIC"].config(
+            text="READY",
+            fg=MUTED,
         )
 
-        message = user_message.lower().strip()
+        text = str(text or "").strip()
 
-        # ----------------------------------------------------
-        # SHUTDOWN COMMANDS
-        # ----------------------------------------------------
-
-        shutdown_commands = [
-            "bye sarathi",
-            "goodbye sarathi",
-            "sarathi stop",
-            "stop sarathi",
-            "go offline",
-            "shut down sarathi",
-            "shutdown sarathi",
-            "exit sarathi"
-        ]
-
-        if any(
-            command in message
-            for command in shutdown_commands
-        ):
-
-            # Interrupt her mid-sentence if she was already speaking.
-            if self.is_speaking:
-                stop_speaking()
-
-            self.is_speaking = True
-
+        if not text:
             self.set_status(
-                "shutting down",
-                AMBER
+                "READY",
+                GREEN,
+                "I didn't hear anything.",
             )
 
-            threading.Thread(
-                target=self.shutdown_in_background,
-                daemon=True
-            ).start()
-
+            self.log_activity("No speech detected.")
+            self.root.after(800, self.begin_listening)
             return
 
-        # ----------------------------------------------------
-        # GET RESPONSE
-        #
-        # IMPORTANT:
-        #
-        # get_response() accepts ONE argument.
-        #
-        # Correct:
-        # get_response(user_message)
-        #
-        # ----------------------------------------------------
+        self.log_activity(f"You: {text}")
 
-        # BARGE-IN: if Sarathi was already speaking, cut her off
-        # immediately before responding to this new message.
-        if self.is_speaking:
-            stop_speaking()
-            self.is_speaking = False
-
-        try:
-
-            response = get_response(
-                user_message
-            )
-
-        except Exception as error:
-
-            print(
-                "\nSARATHI brain error:"
-            )
-
-            print(error)
-
-            response = (
-                "Sorry, I ran into a problem "
-                "while processing that."
-            )
-
-        # ----------------------------------------------------
-        # PRINT SARATHI RESPONSE
-        # ----------------------------------------------------
-
-        print(
-            f"SARATHI: {response}"
-        )
-
-        # ----------------------------------------------------
-        # SPEAK RESPONSE
-        # ----------------------------------------------------
-
-        self.is_speaking = True
+        self.is_processing = True
 
         self.set_status(
-            "responding",
-            AMBER
+            "THINKING",
+            ORANGE,
+            "SARATHI is thinking...",
+        )
+
+        self.system_items["GROQ"].config(
+            text="THINKING",
+            fg=ORANGE,
         )
 
         threading.Thread(
-            target=self.speak_in_background,
-            args=(response,),
-            daemon=True
+            target=self.response_thread,
+            args=(text,),
+            daemon=True,
         ).start()
 
-        # Keep listening immediately, even while she's still speaking,
-        # so a new question can interrupt her (barge-in).
-        self.root.after(
-            200,
-            self.start_listening
-        )
+    # --------------------------------------------------------
+    # TASK CONFIRMATION
+    # Show the dialog on Tkinter's main thread.
+    # --------------------------------------------------------
+    def confirm_task(self, message):
+        if self.is_shutting_down:
+            return False
 
-    # ========================================================
-    # SPEAK IN BACKGROUND
-    # ========================================================
+        result = {"approved": False}
+        completed = threading.Event()
 
-    def speak_in_background(
-        self,
-        response
-    ):
+        def show_confirmation():
+            try:
+                if not self.is_shutting_down:
+                    result["approved"] = messagebox.askyesno(
+                        "SARATHI — Confirm Action",
+                        f"{message}\n\nDo you want to continue?",
+                        parent=self.root,
+                    )
+
+            except Exception as error:
+                print(f"[SARATHI] Confirmation error: {error}")
+                result["approved"] = False
+
+            finally:
+                completed.set()
 
         try:
+            self.root.after(0, show_confirmation)
 
-            speak(
-                response
+        except (tk.TclError, RuntimeError) as error:
+            print(
+                f"[SARATHI] Could not request confirmation: {error}"
+            )
+            return False
+
+        if not completed.wait(timeout=120):
+            print("[SARATHI] Confirmation timed out.")
+            return False
+
+        return bool(result["approved"])
+
+    # --------------------------------------------------------
+    # GET RESPONSE
+    # --------------------------------------------------------
+    def response_thread(self, text):
+        try:
+            response = get_response(
+                text,
+                confirm_callback=self.confirm_task,
             )
 
         except Exception as error:
-
-            print(
-                "\nSARATHI speech error:"
-            )
-
-            print(error)
-
-        finally:
-
-            self.is_speaking = False
-
-            # NOTE: no call to start_listening/ready_to_listen here -
-            # continuous listening is already running independently
-            # (kicked off right after dispatching this speak thread), so
-            # calling it again here would create a duplicate loop.
-
-    # ========================================================
-    # SHUTDOWN
-    # ========================================================
-
-    def shutdown_in_background(self):
-
-        goodbye = (
-            "Bye Bhushan. "
-            "See you soon."
-        )
-
-        print(
-            f"SARATHI: {goodbye}"
-        )
+            print(f"[SARATHI] Response error: {error}")
+            response = "Something went wrong while I was thinking."
 
         try:
-
-            speak(
-                goodbye
+            self.root.after(
+                0,
+                lambda reply=response: self.speak_response(reply),
             )
-
-        except Exception as error:
-
-            print(
-                "\nSARATHI shutdown voice error:"
-            )
-
-            print(error)
-
-        finally:
-
-            if self.is_running:
-
-                self.root.after(
-                    0,
-                    self.close_app
-                )
-
-    # ========================================================
-    # CLOSE APPLICATION
-    # ========================================================
-
-    def close_app(self):
-
-        if not self.is_running:
-            return
-
-        self.is_running = False
-        self.is_listening = False
-        self.is_speaking = False
-
-        try:
-
-            self.root.destroy()
-
-        except Exception:
-
+        except tk.TclError:
             pass
 
-    # ========================================================
-    # HUD ANIMATION
-    # ========================================================
-
-    def animate_hud(self):
-
-        if not self.is_running:
+    # --------------------------------------------------------
+    # SPEAK RESPONSE
+    # --------------------------------------------------------
+    def speak_response(self, response):
+        if self.is_shutting_down:
             return
 
-        self.canvas.delete(
-            "all"
+        self.is_processing = False
+        self.is_speaking = True
+
+        self.system_items["GROQ"].config(
+            text="ONLINE",
+            fg=GREEN,
         )
 
-        center_x = 300
-        center_y = 180
+        self.system_items["PIPER"].config(
+            text="SPEAK",
+            fg=CYAN,
+        )
 
-        # ----------------------------------------------------
-        # PULSE
-        # ----------------------------------------------------
+        self.set_status(
+            "SPEAKING",
+            CYAN,
+            "Press Space to interrupt",
+        )
 
-        self.pulse_value += 0.08
+        self.log_activity(f"SARATHI: {response}")
 
-        pulse = (
-            math.sin(
-                self.pulse_value
-            ) + 1
-        ) / 2
+        threading.Thread(
+            target=self.speech_thread,
+            args=(response,),
+            daemon=True,
+        ).start()
 
-        # ----------------------------------------------------
-        # OUTER RINGS
-        # ----------------------------------------------------
+    def speech_thread(self, response):
+        try:
+            speak(response)
 
-        for i in range(5):
+        except Exception as error:
+            print(f"[SARATHI] Speech error: {error}")
 
-            radius = (
-                105
-                + i * 22
-                + pulse * 8
-            )
+        try:
+            self.root.after(0, self.speech_finished)
+        except tk.TclError:
+            pass
 
-            if i == 0:
+    def speech_finished(self):
+        self.is_speaking = False
 
-                outline = CYAN
+        self.system_items["PIPER"].config(
+            text="READY",
+            fg=MUTED,
+        )
 
-            elif i == 1:
+        if self.is_shutting_down:
+            return
 
-                outline = BLUE
+        self.set_status(
+            "READY",
+            GREEN,
+            "Listening again...",
+        )
 
-            else:
+        self.root.after(650, self.begin_listening)
 
-                outline = "#123545"
+    # --------------------------------------------------------
+    # SPACEBAR TO STOP SPEECH
+    # --------------------------------------------------------
+    def interrupt(self, event=None):
+        if not self.is_speaking:
+            return
 
+        print("[SARATHI] Speech interrupted.")
+        stop_speaking()
+
+        self.is_speaking = False
+
+        self.system_items["PIPER"].config(
+            text="READY",
+            fg=MUTED,
+        )
+
+        self.set_status(
+            "READY",
+            GREEN,
+            "Voice interrupted.",
+        )
+
+        self.log_activity("Voice interrupted.")
+
+        if not self.is_shutting_down:
+            self.root.after(400, self.begin_listening)
+
+    # --------------------------------------------------------
+    # HUD ANIMATION
+    # --------------------------------------------------------
+    def animate(self):
+        if self.is_shutting_down:
+            return
+
+        self.animation_angle += 3
+        self.pulse += 0.08
+
+        self.canvas.delete("all")
+
+        center_x = 165
+        center_y = 135
+
+        # Outer rings
+        for radius in (92, 76, 58):
             self.canvas.create_oval(
                 center_x - radius,
                 center_y - radius,
                 center_x + radius,
                 center_y + radius,
-                outline=outline,
-                width=2 if i < 2 else 1
+                outline=BORDER,
+                width=1,
             )
 
-        # ----------------------------------------------------
-        # ROTATING ARCS
-        # ----------------------------------------------------
-
-        self.animation_angle += 3
-
-        for i in range(3):
-
-            start_angle = (
-                self.animation_angle
-                + i * 120
-            ) % 360
-
-            radius = (
-                125
-                + i * 12
-            )
-
-            self.canvas.create_arc(
-                center_x - radius,
-                center_y - radius,
-                center_x + radius,
-                center_y + radius,
-                start=start_angle,
-                extent=55,
-                style=tk.ARC,
-                outline=(
-                    CYAN
-                    if i == 0
-                    else BLUE
-                ),
-                width=2
-            )
-
-        # ----------------------------------------------------
-        # MAIN CORE
-        # ----------------------------------------------------
-
-        core_radius = (
-            58
-            + pulse * 8
-        )
+        # Pulsing core
+        pulse_size = 35 + math.sin(self.pulse) * 5
 
         self.canvas.create_oval(
-            center_x - core_radius,
-            center_y - core_radius,
-            center_x + core_radius,
-            center_y + core_radius,
-            fill="#07151D",
+            center_x - pulse_size,
+            center_y - pulse_size,
+            center_x + pulse_size,
+            center_y + pulse_size,
             outline=CYAN,
-            width=3
+            width=2,
         )
 
-        # ----------------------------------------------------
-        # INNER CORE
-        # ----------------------------------------------------
-
-        inner_radius = (
-            30
-            + pulse * 5
-        )
+        core_size = 20
 
         self.canvas.create_oval(
-            center_x - inner_radius,
-            center_y - inner_radius,
-            center_x + inner_radius,
-            center_y + inner_radius,
-            fill="#0B2430",
-            outline=BLUE,
-            width=2
+            center_x - core_size,
+            center_y - core_size,
+            center_x + core_size,
+            center_y + core_size,
+            fill=CYAN,
+            outline="",
         )
 
-        # ----------------------------------------------------
-        # SARATHI LETTER
-        # ----------------------------------------------------
-
-        self.canvas.create_text(
-            center_x,
-            center_y - 5,
-            text="S",
-            font=(
-                "Segoe UI",
-                30,
-                "bold"
-            ),
-            fill=WHITE
-        )
-
-        # ----------------------------------------------------
-        # SARATHI TEXT
-        # ----------------------------------------------------
-
-        self.canvas.create_text(
-            center_x,
-            center_y + 28,
-            text="SARATHI",
-            font=(
-                "Segoe UI",
-                8,
-                "bold"
-            ),
-            fill=CYAN
-        )
-
-        # ----------------------------------------------------
-        # STATUS INDICATOR
-        # ----------------------------------------------------
-
-        if self.is_listening:
-
-            self.canvas.create_text(
-                center_x,
-                center_y + 125,
-                text="● LISTENING",
-                font=(
-                    "Segoe UI",
-                    10,
-                    "bold"
-                ),
-                fill=GREEN
+        # Rotating dots
+        for i in range(12):
+            angle = math.radians(
+                self.animation_angle + i * 30
             )
 
-        elif self.is_speaking:
+            radius = 105
 
-            self.canvas.create_text(
-                center_x,
-                center_y + 125,
-                text="● SPEAKING",
-                font=(
-                    "Segoe UI",
-                    10,
-                    "bold"
-                ),
-                fill=AMBER
+            x = center_x + math.cos(angle) * radius
+            y = center_y + math.sin(angle) * radius
+            size = 2 + (i % 3)
+
+            self.canvas.create_oval(
+                x - size,
+                y - size,
+                x + size,
+                y + size,
+                fill=CYAN,
+                outline="",
             )
 
-        else:
+        # Animated waveform
+        base_y = 255
+        points = []
 
-            self.canvas.create_text(
-                center_x,
-                center_y + 125,
-                text="● STANDBY",
-                font=(
-                    "Segoe UI",
-                    10,
-                    "bold"
-                ),
-                fill=GRAY
+        for x in range(35, 296, 8):
+            wave = math.sin(
+                x * 0.08 + self.pulse * 2
             )
 
-        # ----------------------------------------------------
-        # NEXT FRAME
-        # ----------------------------------------------------
+            if self.is_listening:
+                amplitude = 18
+            elif self.is_speaking:
+                amplitude = 12
+            elif self.is_processing:
+                amplitude = 8
+            else:
+                amplitude = 4
 
-        self.root.after(
-            40,
-            self.animate_hud
+            points.append(
+                (x, base_y + wave * amplitude)
+            )
+
+        for i in range(len(points) - 1):
+            self.canvas.create_line(
+                points[i][0],
+                points[i][1],
+                points[i + 1][0],
+                points[i + 1][1],
+                fill=CYAN,
+                width=2,
+            )
+
+        self.root.after(40, self.animate)
+
+    # --------------------------------------------------------
+    # CLOCK AND SHUTDOWN
+    # --------------------------------------------------------
+    def update_clock(self):
+        if self.is_shutting_down:
+            return
+
+        now = datetime.now()
+
+        self.clock_label.config(
+            text=now.strftime("%d %b %Y  •  %I:%M:%S %p")
         )
 
+        self.root.after(1000, self.update_clock)
 
-# ============================================================
-# MAIN
-# ============================================================
+    def shutdown(self):
+        if self.is_shutting_down:
+            return
+
+        self.is_shutting_down = True
+
+        try:
+            stop_speaking()
+        except Exception:
+            pass
+
+        try:
+            self.root.destroy()
+        except tk.TclError:
+            pass
+
 
 def main():
-
     root = tk.Tk()
-
-    SarathiApp(
-        root
-    )
-
+    SarathiApp(root)
     root.mainloop()
 
 
-# ============================================================
-# RUN
-# ============================================================
-
 if __name__ == "__main__":
-
     main()
